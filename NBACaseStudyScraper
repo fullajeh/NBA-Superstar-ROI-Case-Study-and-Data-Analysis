@@ -1,0 +1,245 @@
+import pandas as pd 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import matplotlib.patches as mpatches
+
+player_data = {
+    'Name': [
+        'Stephen Curry','Joel Embiid','Nikola Jokic','Kevin Durant','Anthony Davis',
+        'Jayson Tatum','Giannis Antetokounmpo','Jimmy Butler','Damian Lillard','Bradley Beal',
+        'Jaylen Brown','Devin Booker','Karl-Anthony Towns','LeBron James','Paul George','Kawhi Leonard',
+        'Zach LaVine','Evan Mobley','Jamal Murray','Lauri Markkanen','Donovan Mitchell',
+        'Luka Doncic','Trae Young','Tyrese Haliburton','Anthony Edwards','Pascal Siakam',
+        'Domantas Sabonis','OG Anunoby','Ja Morant','Darius Garland'
+    ],
+    'Salary': [
+        59606817, 55224526, 55224526, 54708609, 54126450, 54126450, 54126450, 54126450, 54126450, 53666270,
+        53142264, 51946089, 51346392, 52627153, 51656600, 50000000, 47499660, 46398170, 46070370, 44390104,
+        46394100, 45999650, 45999650, 45550512, 45550512, 45550512, 43636000, 39568956, 39446090, 39446090
+    ],
+    # 2023-24 per game averages (Basketball-Reference)
+    'PPG': [
+        26.4, 34.7, 26.4, 27.1, 24.7,
+        26.9, 30.4, 20.8, 24.3, 18.2,
+        23.0, 27.1, 21.8, 25.7, 22.6,
+        23.7, 19.5, 15.7, 21.2, 23.2,
+        26.6, 33.9, 25.7, 20.1, 25.9,
+        22.7, 19.4, 14.7, 25.0, 18.0
+    ],
+    'APG': [
+        5.1, 5.6, 9.0, 5.0, 3.5,
+        4.9, 6.5, 5.0, 7.0, 4.4,
+        3.6, 6.9, 3.0, 8.3, 3.5,
+        3.6, 3.9, 3.0, 6.5, 2.0,
+        6.1, 9.8, 10.8, 10.9, 5.1,
+        4.9, 8.2, 2.1, 8.1, 6.5
+    ],
+    'RPG': [
+        4.5, 10.9, 12.4, 6.6, 12.6,
+        8.1, 11.5, 5.3, 4.4, 4.4,
+        5.5, 4.5, 8.3, 7.3, 5.2,
+        6.1, 4.7, 9.4, 4.1, 8.2,
+        5.1, 9.2, 2.9, 4.0, 5.4,
+        13.7, 4.1, 4.5, 5.6, 2.7
+    ],
+    'BPG': [
+        0.4, 1.7, 0.9, 1.2, 2.3,
+        0.7, 1.1, 0.3, 0.2, 0.4,
+        0.5, 0.4, 0.7, 0.5, 0.5,
+        0.9, 0.3, 1.4, 0.3, 0.5,
+        0.5, 0.6, 0.2, 0.7, 0.6,
+        0.5, 0.7, 0.7, 0.4, 0.1
+    ],
+    'SPG': [
+        0.7, 1.1, 1.4, 0.9, 1.2,
+        1.0, 1.2, 1.3, 0.9, 0.9,
+        1.1, 0.9, 0.6, 1.3, 1.5,
+        1.6, 0.9, 0.8, 1.0, 0.9,
+        1.8, 1.4, 1.3, 1.2, 1.3,
+        0.9, 1.4, 1.4, 1.0, 1.2
+    ],
+    'TPG': [
+        3.2, 3.5, 3.2, 3.1, 2.3,
+        2.7, 3.4, 2.0, 3.1, 2.4,
+        2.5, 3.0, 2.7, 3.5, 2.6,
+        1.7, 2.5, 1.7, 2.1, 1.7,
+        2.9, 4.0, 3.4, 2.5, 3.1,
+        3.4, 2.1, 1.0, 3.5, 3.2
+    ]
+}
+
+# Made by Jehlyen Fuller, 8/21/2025
+# Are NBA Superstars Overpaid for What They Produce? Let's Investigate.
+
+data = pd.DataFrame(player_data)
+
+#Add the Fantasy Points per Column
+data['Fantasy Points'] = (data['APG'] * 1.5) + (data['PPG'] * 1) + (data['BPG'] * 3) + (data['RPG'] * 1.2) + (data['TPG'] * -1) + (data['SPG'] * 3)
+
+print(data) 
+
+#Lets get the mean of all the player's fantasy points for an average points
+fp_mean = data["Fantasy Points"].mean()
+print("Average Fantasy Points per Superstar", fp_mean) # If the Player doesn't have a Fantasy Score over 43, they're considered overpaid.
+
+#Lets get the average salary of a superstar for comparison
+salary_mean = data["Salary"].mean()
+print("Average Salary Per Superstar: ", salary_mean)
+
+#Setup the bins for comparison
+fp_bins = np.linspace(min(data["Fantasy Points"]), max(data["Fantasy Points"]), 4)
+group_names = ["Under-performing", "Average-performing", "Over-performing"]
+data["Fantasy Points Bin"] = pd.cut(data['Fantasy Points'], fp_bins, labels=group_names, include_lowest=True)
+
+#Make x and y into variables for less redundant coding
+x_data = data['Fantasy Points']
+y_data = data['Salary']
+
+#Lets set colors for the Underpaid and Overpaid Players!
+colors = []
+
+# Loop through the data points and assign colors based on conditions
+for i in range(len(x_data)):
+    fantasy_points = x_data[i]
+    salary = y_data[i]
+
+    if (fantasy_points > 43 and salary > 49000000) or (fantasy_points > 43 and salary < 49000000): #Average fantasy points = 43, average salary = 49 million
+        colors.append('green')  # Player is underpaid
+    elif fantasy_points <= 43 and salary < 49000000:
+        colors.append('gray')  # Player is fairly paid
+    else:
+    	colors.append('red')  # Player is over paid
+
+#Scatterplot Chart Details
+plt.figure(figsize=(10,6)) # Resize the Figure Size for Visualization
+plt.scatter(x_data, y_data, alpha=0.7, c=colors) # Plot the data
+plt.title("Salary vs Productivity")
+plt.xlabel("Fantasy Points")
+plt.ylabel("Salary")
+plt.grid(True)
+
+#Lets make a legend
+over_patch = mpatches.Patch(color="red", label="Over-Paid (Bad Value)")
+fair_patch  = mpatches.Patch(color="gray",  label="Fairly Paid")
+under_patch = mpatches.Patch(color="green", label="Under-Paid (Good Value)")
+
+plt.legend(handles=[over_patch, fair_patch, under_patch], loc="best")
+
+# Define a function to format the y-axis labels as millions
+def millions_formatter(x, pos):
+    return f'${x / 1_000_000:.1f}M' # Divide by 1 million and add 'M' suffix with dollar sign
+
+# Get the current axes object
+ax = plt.gca()
+
+# Apply the custom formatter to the y-axis major ticks
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(millions_formatter))
+
+# Lets make a Regression Line
+m, b = np.polyfit(x_data, y_data, 1)
+
+#Generate x values accross the scatterplot
+x_range = np.linspace(x_data.min(), x_data.max(), 100)
+y_range = m * x_range + b
+
+#Plot regression line
+plt.scatter(x_data, y_data, alpha=0.7, c=colors) 
+plt.plot(x_range, y_range, color="black", linestyle="--", linewidth=2, label="Regression Line")
+
+
+# Set a Limit to the Y axis to only focus on the 35 millions and up
+plt.ylim(35_000_000, max(y_data) * 1.05)
+
+plt.figtext(
+    0.99, 0.01, "© Jehlyen Fuller",
+    ha="right", va="bottom", fontsize=9, color="gray", alpha=0.6)
+
+#######################################################
+
+# Lets use a Bar Chart for Easier Comparisons
+
+# Lets Start by Sorting the Values from Highests Fantasy Points to the Lowest.
+highest_points = data.sort_values(by='Fantasy Points', ascending=False)
+
+# Remember, the average fantasy points are: 43 fantasy points.
+
+x_bar = highest_points['Name']
+y_bar = highest_points['Fantasy Points']
+y_bar.astype(float)
+
+
+colorBar = []
+
+for index, fantasyPoints in enumerate(highest_points['Fantasy Points']):
+	if index != len(highest_points['Name']):
+		if fantasyPoints > 43.0:
+			colorBar.append('green')
+		elif fantasyPoints == 43.0:
+			colorBar.append('grey')
+		else:
+			colorBar.append('red')
+
+plt.figure(figsize=(10,6))
+plt.title("“Performance ranking — who produces the most?”")
+plt.xlabel("NBA Superstars")
+plt.ylabel("Fantasy Points (All Stats Combined)")
+plt.bar(x_bar, y_bar, color=colorBar)
+plt.subplots_adjust(wspace=0.2, hspace=0.5)
+plt.xticks(rotation=45, ha='right')
+plt.ylim(25, max(y_bar) * 1.05)
+plt.tight_layout()
+over_performing = mpatches.Patch(color="green", label="Over Performing")
+under_performing = mpatches.Patch(color="red", label="Under Performing")
+plt.legend(handles=[over_performing, under_performing], loc='best')
+
+plt.figtext(
+    0.99, 0.01, "© Jehlyen Fuller",
+    ha="right", va="bottom", fontsize=9, color="gray", alpha=0.6)
+
+######################################################################
+
+
+# So how about the return on investment? 
+# What's the productivity per million(s) of dollars spent.
+
+# Lets make a new column for that specifically.
+data["FP_per_Million"] = data["Fantasy Points"] / (data["Salary"] / 1_000_000)
+
+# Sort players by ROI descending
+data_sorted = data.sort_values("FP_per_Million", ascending=False)
+avg = data_sorted["FP_per_Million"].mean()
+
+# Assign colors (good = green, neutral = gray, bad = red)
+colors = []
+for val in data_sorted["FP_per_Million"]:
+    if val > avg * 1.1:
+        colors.append("green")   # good ROI
+    elif val < avg * 0.9:
+        colors.append("red")     # bad ROI
+    else:
+        colors.append("gray")    # neutral ROI
+
+# Horizontal bar chart
+plt.figure(figsize=(10,8))
+plt.barh(data_sorted["Name"], data_sorted["FP_per_Million"], color=colors, edgecolor="black")
+
+# Adding an average line
+plt.axvline(avg, color="black", linestyle="--", linewidth=1.5, label="League Avg")
+
+# Titles + labels
+plt.title("NBA ROI ranking — who gives the most value per dollar?", fontsize=14, weight="bold")
+plt.xlabel("Fantasy Points per $1M")
+plt.ylabel("NBA Superstars")
+plt.legend()
+
+# Invert y-axis so top value appears at the top
+plt.gca().invert_yaxis()
+
+plt.tight_layout()
+
+plt.figtext(
+    0.99, 0.01, "© Jehlyen Fuller",
+    ha="right", va="bottom", fontsize=9, color="gray", alpha=0.6)
+
+plt.show()
